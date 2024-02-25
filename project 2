@@ -1,0 +1,16 @@
+select 	
+		gp.user_id 
+		, gp.game_name 
+		, to_char(date_trunc('month', gp.payment_date), 'YYYY-MM-DD') as pay_month
+		, sum(gp.revenue_amount_usd) as user_month_revenue 
+		, gpu."language"
+		, gpu.has_older_device_model
+		, gpu.age
+		, case when sum(gp.revenue_amount_usd) > lag(sum(gp.revenue_amount_usd)) over(partition by gp.user_id order by to_char(date_trunc('month', gp.payment_date), 'YYYY-MM-DD') ) 
+ 			then sum(gp.revenue_amount_usd) - lag(sum(gp.revenue_amount_usd)) over(partition by gp.user_id order by to_char(date_trunc('month', gp.payment_date), 'YYYY-MM-DD') ) else 0 end as expansion_mrr
+ 		, case when sum(gp.revenue_amount_usd) < lag(sum(gp.revenue_amount_usd)) over(partition by gp.user_id order by to_char(date_trunc('month', gp.payment_date), 'YYYY-MM-DD') ) 
+ 			then lag(sum(gp.revenue_amount_usd)) over(partition by gp.user_id order by to_char(date_trunc('month', gp.payment_date), 'YYYY-MM-DD') ) - sum(gp.revenue_amount_usd) else 0 end as contraction_mrr
+  from	project.games_payments gp
+  left	join project.games_paid_users gpu on gp.user_id = gpu.user_id
+ group	by 1, 3, 2, 5, 6, 7
+ order	by 1, 3
