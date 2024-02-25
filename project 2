@@ -1,4 +1,4 @@
-select 	
+select 	 
 	gp.user_id 
 	, gp.game_name 
 	, to_char(date_trunc('month', gp.payment_date), 'YYYY-MM-DD') as pay_month
